@@ -61,38 +61,40 @@ def play_double(color_list):
 
         print("place a bet")
         bet = int(input())
+        print("\n")
 
         while bet > your_money:
             print("insufficient funds, try again")
             print("place a bet")
             bet = int(input())
+            print("\n")
 
         if chosen_color == "white":
             if color_list[i] == chosen_color:
                 print("the winning color is " + color_list[i])
                 print("well done!")
                 your_money += bet*13
-                print("now you have {} dollars" .format(your_money))
+                print("now you have {} dollars\n\n" .format(your_money))
             else:
                 print("the winning color is " + color_list[i])
                 print("better luck next time")
                 your_money -= bet
-                print("now you have {} dollars" .format(your_money))
+                print("now you have {} dollars\n\n" .format(your_money))
         else:
             if str(color_list[i]) == chosen_color:
                 print("the winning color is " + color_list[i])
                 print("well done!")
                 your_money += bet
-                print("now you have {} dollars" .format(your_money))
+                print("now you have {} dollars\n\n" .format(your_money))
             else:
                 print("the winning color is " + color_list[i])
                 print("better luck next time")
                 your_money -= bet
-                print("now you have {} dollars" .format(your_money))
+                print("now you have {} dollars\n\n" .format(your_money))
 
     print("now you have {} dollars" .format(your_money))
 
-def write_to_csv():
+def write_to_csv(dictionary):
     df = pd.DataFrame.from_dict(dictionary, orient='index')
     df.to_csv('selected_colors.csv', index=False)
 
@@ -117,7 +119,7 @@ for round in range(number_of_times):
         time.sleep(20)
 
 
-#write_to_csv(dictionary)
+write_to_csv(dictionary)
 
 color_list = []
 for i in dictionary:
