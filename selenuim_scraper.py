@@ -99,9 +99,11 @@ def write_to_txt(color_list):
 
 
 ############################ VARIABLES YOU MAY WANT TO CHANGE #############################
-max_len_dict = 10000
-number_of_rounds_whitout_white = 100
-number_of_bets_after_white = 10
+max_len_dict = 10000  # number of rounds that will be evaluated
+number_of_rounds_whitout_white = 100 # will start betting on white after this amount of rounds without white
+number_of_rounds_before_white = 30 # cheacks how many whites have been selected in the past "number_of_rounds_before_white" rounds
+number_of_bets_after_white = 10 # after a white has been selected will continue betting on white for this number of rounds if its worth it
+
 ###########################################################################################
 dictionary = {}
 investo_counter = 0
@@ -168,11 +170,11 @@ while(len(dictionary) < max_len_dict):
             #disc.send_discord_msg(f"Its a Good time to bet! There have been {number_of_rounds_whitout_white + message_counter} rounds without white")
             message_counter += 1
 
-    # Checks for how many whites have been selected in the last 30 rounds
-    num_of_whites = the_colors[-30:].count("white") #number_of_rounds_whitout_white
+    # Checks for how many whites have been selected in the last "number_of_round_before_white" rounds
+    num_of_whites = the_colors[-number_of_rounds_before_white:].count("white") #number_of_rounds_whitout_white
 
     # If the last color selected is white, bets on white again
-    if list(the_colors)[-1] == "white" and num_of_whites < 2 and len(dictionary) > 30:
+    if list(the_colors)[-1] == "white" and num_of_whites < 2 and len(dictionary) > number_of_rounds_before_white:
         if seed_before_click != last_seed:
             sleep(1)
             WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click()
