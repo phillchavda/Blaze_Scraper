@@ -6,8 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from matplotlib import pyplot as plt
-from requests import post
-
+import discord_msg_sender as disc
 
 def plot_results(color_list):
     num_of_color = {"red": 0, "black": 0, "white": 0}
@@ -99,17 +98,12 @@ def write_to_txt(color_list):
             file.write("\n")
 
 
-def send_discord_msg(token, chanel_id, message):
-    discord_url = f"https://discord.com/api/v9/channels/{chanel_id}/messages"
-    data = {"content": message}
-    header = {"authorization":token}
-    post(discord_url, data=data, headers=header)
-
-
-dictionary = {}
+############################ VARIABLES YOU MAY WANT TO CHANGE #############################
 max_len_dict = 10000
 number_of_rounds_whitout_white = 100
 number_of_bets_after_white = 10
+###########################################################################################
+dictionary = {}
 investo_counter = 0
 message_counter = 0
 the_colors = []
@@ -120,9 +114,6 @@ website2 = "https://blaze.com/en/games/double?modal=auth&tab=login"
 
 email = input("Enter your Blaze acount email")
 password = input("Enter your password")
-
-token = "NzEwNTE3OTQ3MzgyMzY2MjU4.GDn3Cm.Ua8BYaubSl-iJIhBg4tiMomqJfS0gGs2P2hkvM"
-chanel_id = "1004096816335310871"
 
 driver = Chrome(service=Service(ChromeDriverManager().install())) 
 
@@ -137,22 +128,22 @@ driver2.find_element(By.NAME,"username").send_keys(email)
 driver2.find_element(By.NAME,"password").send_keys(password)
 driver2.find_element(By.CLASS_NAME, "input-footer").click()
 
-sleep(5) #improve
+sleep(5) 
 
-driver2.find_element(By.CLASS_NAME, "input-field").send_keys("4")
+driver2.find_element(By.CLASS_NAME, "input-field").send_keys("4") # Will bet R$4,00 on white, you can change this!
 driver2.find_element(By.CLASS_NAME, "white").click()
 
 while(len(dictionary) < max_len_dict):
     driver.get(website)
-    sleep(5) #improve
+    sleep(5) 
 
     # Waits for selected colors to load into page
     WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, ".//tbody/tr/td[3]/div/a")))
     WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, ".//tbody/tr/td[2]/div/div")))
 
     # Gets slected colors and their identifiers from webpage
-    selected_seeds = driver.find_elements(By.XPATH, ".//tbody/tr/td[3]/div/a") #improve (sometimes isnt getting all 10 results)
-    selected_colors = driver.find_elements(By.XPATH, ".//tbody/tr/td[2]/div/div") #improve (sometimes isnt getting all 10 results)
+    selected_seeds = driver.find_elements(By.XPATH, ".//tbody/tr/td[3]/div/a") 
+    selected_colors = driver.find_elements(By.XPATH, ".//tbody/tr/td[2]/div/div") 
 
     # Cleans up data and makes sure same color hasnt been stored twice in dictionary
     for i in range(9,-1, -1):
@@ -172,12 +163,9 @@ while(len(dictionary) < max_len_dict):
     if len(dictionary) > number_of_rounds_whitout_white and "white" not in the_colors[-number_of_rounds_whitout_white:]:
         if seed_before_click != last_seed:
             sleep(1)
-            WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click() # not working
+            WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click()
             seed_before_click = the_seeds[-1]
-            print("entered situation 1")
-            #desktop_notification()
-            #discord_notification()
-            send_discord_msg(token, chanel_id, f"Its a Good time to bet! There have been {number_of_rounds_whitout_white + message_counter} rounds without white")
+            #disc.send_discord_msg(f"Its a Good time to bet! There have been {number_of_rounds_whitout_white + message_counter} rounds without white")
             message_counter += 1
 
     # Checks for how many whites have been selected in the last 30 rounds
@@ -187,9 +175,8 @@ while(len(dictionary) < max_len_dict):
     if list(the_colors)[-1] == "white" and num_of_whites < 2 and len(dictionary) > 30:
         if seed_before_click != last_seed:
             sleep(1)
-            WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click()#not working
+            WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click()
             seed_before_click = the_seeds[-1]
-            print("entered situation 2")
             investo_counter = 1
             message_counter = 0
 
@@ -199,10 +186,9 @@ while(len(dictionary) < max_len_dict):
             investo_counter = 0
 
         if seed_before_click != last_seed:
-            WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click() #working
+            WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click()
             seed_before_click = the_seeds[-1]
             investo_counter += 1
-            print("entered situation 3")
 
     if num_of_whites >= 2:
         investo_counter = 0
