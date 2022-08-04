@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from matplotlib import pyplot as plt
-import discord_msg_sender as disc
+#import discord_msg_sender as disc
 
 def plot_results(color_list):
     num_of_color = {"red": 0, "black": 0, "white": 0}
@@ -91,8 +91,8 @@ def play_double(color_list):
     print("now you have {} dollars" .format(your_money))
 
 
-def write_to_txt(color_list):
-    with open("selected_colors.txt", "w") as file:
+def write_to_txt(color_list, file_name):
+    with open(file_name, "w") as file:
         for color in color_list:
             file.write(color)
             file.write("\n")
@@ -100,16 +100,18 @@ def write_to_txt(color_list):
 
 ############################ VARIABLES YOU MAY WANT TO CHANGE #############################
 max_len_dict = 10000  # number of rounds that will be evaluated
-number_of_rounds_whitout_white = 100 # will start betting on white after this amount of rounds without white
-number_of_rounds_before_white = 30 # cheacks how many whites have been selected in the past "number_of_rounds_before_white" rounds
+number_of_rounds_whitout_white = 85 # will start betting on white after this amount of rounds without white
+number_of_rounds_before_white = 45 # cheacks how many whites have been selected in the past "number_of_rounds_before_white" rounds
 number_of_bets_after_white = 10 # after a white has been selected will continue betting on white for this number of rounds if its worth it
-
+betting_money = "2" # Will bet this quantity on white
 ###########################################################################################
+
 dictionary = {}
 investo_counter = 0
 message_counter = 0
 the_colors = []
 seed_before_click = " "
+your_money = []
 
 website = "https://blaze.com/en/games/double?modal=double_history_index"
 website2 = "https://blaze.com/en/games/double?modal=auth&tab=login"
@@ -117,35 +119,44 @@ website2 = "https://blaze.com/en/games/double?modal=auth&tab=login"
 email = input("Enter your Blaze acount email")
 password = input("Enter your password")
 
-driver = Chrome(service=Service(ChromeDriverManager().install())) 
 
 options = ChromeOptions()
 options.add_experimental_option("detach", True)
 
+driver = Chrome(service=Service(ChromeDriverManager().install()), options=options) 
+
 driver2 = Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
+driver.get(website)
 driver2.get(website2)
 
 driver2.find_element(By.NAME,"username").send_keys(email)
 driver2.find_element(By.NAME,"password").send_keys(password)
-driver2.find_element(By.CLASS_NAME, "input-footer").click()
+WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "input-footer"))).click()
 
-sleep(5) 
-
-driver2.find_element(By.CLASS_NAME, "input-field").send_keys("4") # Will bet R$4,00 on white, you can change this!
+WebDriverWait(driver2, 20).until(EC.presence_of_element_located((By.CLASS_NAME, "input-field")))
+driver2.find_element(By.CLASS_NAME, "input-field").send_keys(betting_money)
 driver2.find_element(By.CLASS_NAME, "white").click()
 
 while(len(dictionary) < max_len_dict):
-    driver.get(website)
-    sleep(5) 
+    selected_seeds = []
+    selected_colors = []
 
-    # Waits for selected colors to load into page
-    WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, ".//tbody/tr/td[3]/div/a")))
-    WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, ".//tbody/tr/td[2]/div/div")))
+    # Keeps trying to load page with the past 10 selected colors and their identifiers until no issues arise
+    num_of_retries = 5
+    for x in range(0, num_of_retries):
+        try:
+            driver.refresh()
+            sleep(1)
+            # Waits for selected colors to load into page
+            WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, ".//tbody/tr/td[3]/div/a")))
+            WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, ".//tbody/tr/td[2]/div/div")))
 
-    # Gets slected colors and their identifiers from webpage
-    selected_seeds = driver.find_elements(By.XPATH, ".//tbody/tr/td[3]/div/a") 
-    selected_colors = driver.find_elements(By.XPATH, ".//tbody/tr/td[2]/div/div") 
+            # Gets slected colors and their identifiers from webpage
+            selected_seeds = driver.find_elements(By.XPATH, ".//tbody/tr/td[3]/div/a")     
+            selected_colors = driver.find_elements(By.XPATH, ".//tbody/tr/td[2]/div/div") 
+        except:
+            print("TimeoutError occurred: reloding page...")
 
     # Cleans up data and makes sure same color hasnt been stored twice in dictionary
     for i in range(9,-1, -1):
@@ -169,6 +180,7 @@ while(len(dictionary) < max_len_dict):
             seed_before_click = the_seeds[-1]
             #disc.send_discord_msg(f"Its a Good time to bet! There have been {number_of_rounds_whitout_white + message_counter} rounds without white")
             message_counter += 1
+            print("entered situation 1")
 
     # Checks for how many whites have been selected in the last "number_of_round_before_white" rounds
     num_of_whites = the_colors[-number_of_rounds_before_white:].count("white") #number_of_rounds_whitout_white
@@ -181,6 +193,8 @@ while(len(dictionary) < max_len_dict):
             seed_before_click = the_seeds[-1]
             investo_counter = 1
             message_counter = 0
+            print("entered situation 2")
+
 
     # After a white token has been selected continues betting on white for a set amount of rounds
     if investo_counter > 0 and num_of_whites < 2:
@@ -188,15 +202,22 @@ while(len(dictionary) < max_len_dict):
             investo_counter = 0
 
         if seed_before_click != last_seed:
+            sleep(0.5)
             WebDriverWait(driver2, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "place-bet"))).click()
             seed_before_click = the_seeds[-1]
             investo_counter += 1
+            print("entered situation 3")
+
 
     if num_of_whites >= 2:
         investo_counter = 0
 
     # Stores data to .txt file for data analysis
-    write_to_txt(the_colors)
+    x = driver2.find_element(By.CLASS_NAME, "currency").get_attribute("textContent")
+    your_money.append(x)
+    write_to_txt(your_money, "money.txt")
+    write_to_txt(the_colors, "selected_colors.txt")
+
 
 # plot_results(the_colors)
 
